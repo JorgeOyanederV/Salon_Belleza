@@ -57,11 +57,12 @@ function versionWebp() {
 
 function watchArchivos() {
     watch( paths.scss, css );
-    watch( paths.js, javascript );
+    //watch( paths.js, javascript );
     watch( paths.imagenes, imagenes );
     watch( paths.imagenes, versionWebp );
 }
   
 exports.css = css;
 exports.watchArchivos = watchArchivos;
-exports.default = parallel(css, javascript,  imagenes, versionWebp, watchArchivos ); 
+exports.default =  javascript;
+exports.all = parallel(css, javascript, imagenes, versionWebp, watchArchivos);
