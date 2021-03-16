@@ -23,6 +23,12 @@ function iniciarApp(){
     botonesPaginador();
     // Muestra el resuen de la cita(o mensaje de error en caso de no pasasr la validacion)
     mostrarResumen();
+    // Almacena el nombre de la cita en el objeto
+    nombreCita();
+    // Almacena la fecha de la cita en el objeto
+    fechaCita();
+    // Deshabilitar dias pasados
+    deshabilitarFechaAnterior();
 }
 
 function mostrarSeccion(){
@@ -98,9 +104,29 @@ function seleccionarServicio(evento){
     }
     if(elemento.classList.contains('seleccionado')){
         elemento.classList.remove('seleccionado');
+        const id = parseInt(elemento.dataset.idServicio);
+        eliminarServicio(id);
     }else{
         elemento.classList.add('seleccionado');
+        // console.log(elemento);
+        const servicioObj = {
+            id: parseInt(elemento.dataset.idServicio),
+            nombre: '',
+            fecha: ''
+        }
+        // console.log(servicioObj);
+        agregarServicio(servicioObj);
     }
+}
+function eliminarServicio(id) {
+    const { servicios } = cita;
+    cita.servicios = cita.servicios.filter(servicio => servicio.id !== id);
+    //console.log(cita.servicios);
+}
+function agregarServicio(servicioObj) {
+    const { servicios } = cita;
+    cita.servicios = [...servicios, servicioObj];
+    //console.log(cita.servicios);
 }
 function paginaSiguiente(){
     const paginaSiguiente = document.querySelector('#siguiente');
@@ -134,8 +160,84 @@ function botonesPaginador(){
 function mostrarResumen(){
     // Destructuring
     const {nombre, fecha, hora, servicios } = cita;
-    //Validacion
-    if (Object.values(cita).includes('')) {
-        
+    // Seleccionar el div de resumen 
+    const resumenDiv = document.querySelector('.contenido-resumen');
+    //Validacion del formulario y servicios
+    if (Object.values(cita).includes('')) { // revisamos que no haya ningun espacio vacio
+        const noServicios = document.createElement('P');
+        noServicios.textContent = 'Faltan datos de servicios, hora, fecha o hora.'
+
+        noServicios.classList.add('invalidar-cita');
+        // agregar a mensaje resumen div
+        resumenDiv.appendChild(noServicios);
     }
+}
+function nombreCita(){
+    const nombreInput = document.querySelector('#nombre');
+    nombreInput.addEventListener('input', evento => {
+        const nombreTexto = evento.target.value.trim();
+        // validacion
+        if (nombreTexto === '' || nombreTexto.length < 3) {
+            mostrarAlerta('Nombre No Valido', 'error');
+        } else {
+            const alerta = document.querySelector('.alerta');
+            if(alerta){
+                alerta.remove();
+            }
+            cita.nombre = nombreTexto;
+        }
+    });
+}
+
+function mostrarAlerta(mensaje, tipo){
+    // Si hay una alerta previa no crear otra
+    const alertaPrevia = document.querySelector('.alerta');
+    if(alertaPrevia) {
+        return;
+        //alertaPrevia.remove();
+    }
+    const alerta = document.createElement('DIV');
+    alerta.textContent = mensaje;
+    alerta.classList.add('alerta');
+    if (tipo === 'error') {
+        alerta.classList.add('error');
+    }
+    // Insertar en el HTML
+    const formulario = document.querySelector('.formulario');
+    formulario.appendChild(alerta);
+
+    // Eliminar la alerta luego de 4 segundos 
+    setTimeout(() => {
+        alerta.remove();
+    }, 4000);
+}
+
+function fechaCita(){
+    const fechaInput = document.querySelector('#fecha');
+    fechaInput.addEventListener('input', evento => {
+        const dia = new Date(evento.target.value).getUTCDay(); // retorna el dia como numero 
+        if ([0,6].includes(dia)) { // si el valor 0 o 6 esta incluido en el dia
+            evento.preventDefault();
+            fechaInput.value = '';
+            mostrarAlerta('Fines de Semana no Permitidos','error')
+        } else{
+            cita.fecha = fechaInput.value;
+        }
+    })
+}
+function deshabilitarFechaAnterior(){
+    const inputFecha = document.querySelector('#fecha');
+    const fechaAhora = new Date();
+    let year = fechaAhora.getFullYear();
+    let month = fechaAhora.getMonth() + 1; // Debido a que los meses comienzan desde 0 
+    let day = fechaAhora.getDate() + 1;
+    if (month < 10) { // El mes debe tener dos digitos
+        month = `0${month}`;
+    }
+    if (day < 10) { // El dia debe tener dos digitos
+        day = `0${day}`;
+    }
+    // Formato deseado AAAA-MM-DD
+    const fechaDeshabilitar = `${year}-${month}-${day}`;
+    inputFecha.min = fechaDeshabilitar;
 }
